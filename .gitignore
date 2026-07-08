@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Scratch (local issue tracker fallback)
+.scratch/

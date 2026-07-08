@@ -1,0 +1,14 @@
+---
+description: Reverse HH project conventions for agent-driven development
+alwaysApply: true
+---
+
+# Reverse HH Conventions
+
+- Read `docs/prd/reverse-hh-prd.md` and `CONTEXT.md` before domain changes.
+- Central domain entity is **Application** (employer response to a resume with a vacancy).
+- Vacancies are **not public** — only resumes appear in the catalog.
+- Preserve snapshot semantics: old applications keep frozen copies of resume, vacancy, and test.
+- Test external behavior in tests, not implementation details.
+- MVP language: Russian UI only.
+- Do not add Out of Scope features from the PRD without explicit user request.
