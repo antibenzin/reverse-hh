@@ -14,7 +14,8 @@ from app.domain.applications import (
     _candidate_owns_application,
     get_application_for_user,
 )
-from app.models import Application, Chat, ChatMessage, ModerationAction, ResumeBlock, User
+from app.domain.notifications import notify_chat_message
+from app.models import Application, Chat, ChatMessage, ModerationAction, Resume, ResumeBlock, User
 from app.models.enums import ApplicationStatus
 
 MAX_MESSAGE_LENGTH = 5000
@@ -41,7 +42,9 @@ def _load_chat(db: Session, chat_id: uuid.UUID) -> Chat | None:
     return (
         db.query(Chat)
         .options(
-            joinedload(Chat.application).joinedload(Application.resume),
+            joinedload(Chat.application)
+            .joinedload(Application.resume)
+            .joinedload(Resume.candidate_profile),
             joinedload(Chat.messages),
         )
         .filter(Chat.id == chat_id)
@@ -124,6 +127,15 @@ def send_message(
     validated = validate_message_body(body)
     message = ChatMessage(chat_id=chat.id, sender_id=user.id, body=validated)
     db.add(message)
+    application = chat.application
+    profile = application.resume.candidate_profile
+    if profile:
+        recipient_id = (
+            application.sent_by
+            if user.id == profile.user_id
+            else profile.user_id
+        )
+        notify_chat_message(db, chat=chat, sender=user, recipient_id=recipient_id)
     db.commit()
     db.refresh(message)
     return message

@@ -16,6 +16,7 @@ from app.domain.access import (
     require_membership,
     require_owner,
 )
+from app.domain.notifications import notify_verification_status
 from app.models import (
     Company,
     CompanyInvite,
@@ -205,6 +206,7 @@ def submit_verification(db: Session, *, user: User, company_id: uuid.UUID) -> Co
         company.verification_status = VerificationStatus.PENDING
     else:
         company.verification_status = VerificationStatus.VERIFIED
+    notify_verification_status(db, user_id=user.id, status=company.verification_status)
     db.commit()
     db.refresh(company)
     return company

@@ -11,6 +11,7 @@ from app.api import (
     companies,
     complaints,
     health,
+    notifications,
     resumes,
     tests,
     vacancies,
@@ -36,6 +37,7 @@ app.include_router(applications.router, prefix="/api/v1")
 app.include_router(chats.router, prefix="/api/v1")
 app.include_router(complaints.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
+app.include_router(notifications.router, prefix="/api/v1")
 
 frontend_path = get_frontend_path()
 if frontend_path.exists():
