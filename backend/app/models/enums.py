@@ -16,6 +16,12 @@ class ResumeVisibility(StrEnum):
     HIDDEN = "hidden"
 
 
+class ExperienceMode(StrEnum):
+    HAS_EXPERIENCE = "has_experience"
+    NO_EXPERIENCE = "no_experience"
+    NDA = "nda"
+
+
 class ContactType(StrEnum):
     PHONE = "phone"
     EMAIL = "email"
