@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.domain.access import NotMemberError, require_membership
+from app.domain.applications import can_apply
 from app.domain.resume_visibility import can_access_link_only_resume, is_resume_in_catalog
 from app.domain.resumes import (
     catalog_card,
@@ -13,7 +14,7 @@ from app.domain.resumes import (
     load_resume,
     resume_to_response,
 )
-from app.models import Company, User
+from app.models import Company, User, Vacancy
 from app.models.enums import VerificationStatus
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
@@ -79,3 +80,24 @@ def get_catalog_resume(
     if can_access_link_only_resume(resume, company, token=token):
         return resume_to_response(resume, employer_view=True)
     raise HTTPException(status_code=404, detail="Resume not found")
+
+
+@router.get("/resumes/{resume_id}/can-apply")
+def can_apply_endpoint(
+    resume_id: uuid.UUID,
+    vacancy_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    x_company_id: str | None = Header(default=None, alias="X-Company-Id"),
+):
+    company = _get_verified_company(db, user, x_company_id)
+    resume = load_resume(db, resume_id)
+    vacancy = db.get(Vacancy, vacancy_id)
+    if not resume or not vacancy:
+        raise HTTPException(status_code=404, detail="Not found")
+    result = can_apply(db, company=company, resume=resume, vacancy=vacancy)
+    return {
+        "can_apply": result.can_apply,
+        "warnings": result.warnings,
+        "test_required": result.test_required,
+    }
