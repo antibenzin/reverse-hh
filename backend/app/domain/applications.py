@@ -12,6 +12,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.domain.access import NotMemberError, require_membership
+from app.domain.notifications import (
+    notify_application_accepted,
+    notify_application_rejected,
+    notify_application_submitted,
+)
 from app.domain.resume_visibility import is_resume_hidden_from_company
 from app.domain.resumes import build_published_payload, load_resume
 from app.domain.tests import test_to_response
@@ -441,8 +446,10 @@ def submit_application(
                 )
             )
 
+    application = _load_application(db, application.id) or application
+    notify_application_submitted(db, application)
     db.commit()
-    return _load_application(db, application.id) or application
+    return application
 
 
 def transition_application(
@@ -484,9 +491,13 @@ def accept_application(db: Session, *, user: User, application_id: uuid.UUID) ->
         application = transition_application(
             db, application=application, to_status=ApplicationStatus.VIEWED, actor="candidate"
         )
-    return transition_application(
+    application = transition_application(
         db, application=application, to_status=ApplicationStatus.ACCEPTED, actor="candidate"
     )
+    application = _load_application(db, application.id) or application
+    notify_application_accepted(db, application)
+    db.commit()
+    return application
 
 
 def reject_application(
@@ -503,9 +514,13 @@ def reject_application(
         raise ApplicationAccessDeniedError()
     if share_with_employer:
         application.rejection_reasons = {"reasons": reasons or [], "other_text": other_text}
-    return transition_application(
+    application = transition_application(
         db, application=application, to_status=ApplicationStatus.REJECTED, actor="candidate"
     )
+    application = _load_application(db, application.id) or application
+    notify_application_rejected(db, application)
+    db.commit()
+    return application
 
 
 def extend_application(
