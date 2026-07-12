@@ -257,6 +257,7 @@ paths:
       summary: Current user
       responses:
         '200':
+          description: Current user
           content:
             application/json:
               schema:
@@ -278,6 +279,7 @@ paths:
       summary: List own resumes
       responses:
         '200':
+          description: List of resumes
           content:
             application/json:
               schema:
@@ -304,6 +306,7 @@ paths:
             format: uuid
       responses:
         '200':
+          description: Resume details
           content:
             application/json:
               schema:
@@ -724,6 +727,7 @@ paths:
             format: uuid
       responses:
         '200':
+          description: Application details
           content:
             application/json:
               schema:
