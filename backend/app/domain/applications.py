@@ -272,10 +272,12 @@ def can_apply(
     return CanApplyResult(can_apply=True, warnings=warnings, test_required=test_required)
 
 
-def application_to_response(application: Application) -> dict[str, Any]:
+def application_to_response(
+    application: Application, *, company_moderation_warning: bool | None = None
+) -> dict[str, Any]:
     resume_data = application.resume_snapshot or {}
     mismatch_flags = resume_data.get("__mismatch_flags", {})
-    return {
+    payload = {
         "id": str(application.id),
         "status": application.status.value,
         "resume_snapshot": {k: v for k, v in resume_data.items() if k != "__mismatch_flags"},
@@ -285,6 +287,9 @@ def application_to_response(application: Application) -> dict[str, Any]:
         "expires_at": application.expires_at.isoformat(),
         "created_at": application.created_at.isoformat(),
     }
+    if company_moderation_warning is not None:
+        payload["company_moderation_warning"] = company_moderation_warning
+    return payload
 
 
 def _candidate_owns_application(db: Session, user: User, application: Application) -> bool:
