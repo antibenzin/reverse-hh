@@ -6,6 +6,7 @@ from app.api import (
     auth,
     candidate,
     catalog,
+    chats,
     companies,
     health,
     resumes,
@@ -30,6 +31,7 @@ app.include_router(resumes.router, prefix="/api/v1")
 app.include_router(tests.router, prefix="/api/v1")
 app.include_router(catalog.router, prefix="/api/v1")
 app.include_router(applications.router, prefix="/api/v1")
+app.include_router(chats.router, prefix="/api/v1")
 
 frontend_path = get_frontend_path()
 if frontend_path.exists():
