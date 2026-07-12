@@ -78,13 +78,29 @@ components:
 
     RegisterRequest:
       type: object
-      required: [email, password, display_name]
+      required: [email, password]
       properties:
         email:
           type: string
         password:
           type: string
           minLength: 8
+
+    CandidateProfileRequest:
+      type: object
+      required: [display_name]
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+
+    CandidateProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
         display_name:
           type: string
 
@@ -269,9 +285,43 @@ paths:
     post:
       tags: [resumes]
       summary: Create candidate profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CandidateProfileRequest'
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateProfile'
+        '400':
+          description: Profile already exists
+        '401':
+          description: Not authenticated
+    patch:
+      tags: [resumes]
+      summary: Update candidate profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CandidateProfileRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateProfile'
+        '404':
+          description: Profile not found
+        '401':
+          description: Not authenticated
 
   /resumes:
     get:
