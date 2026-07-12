@@ -2,12 +2,14 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.api import (
+    admin,
     applications,
     auth,
     candidate,
     catalog,
     chats,
     companies,
+    complaints,
     health,
     resumes,
     tests,
@@ -32,6 +34,8 @@ app.include_router(tests.router, prefix="/api/v1")
 app.include_router(catalog.router, prefix="/api/v1")
 app.include_router(applications.router, prefix="/api/v1")
 app.include_router(chats.router, prefix="/api/v1")
+app.include_router(complaints.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
 
 frontend_path = get_frontend_path()
 if frontend_path.exists():

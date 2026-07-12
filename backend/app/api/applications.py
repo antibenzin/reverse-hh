@@ -15,6 +15,7 @@ from app.domain.applications import (
     InvalidTransitionError,
     LimitExceededError,
     TestAnswerInput,
+    _candidate_owns_application,
     accept_application,
     application_to_response,
     close_application,
@@ -27,6 +28,7 @@ from app.domain.applications import (
     request_reactivation,
     submit_application,
 )
+from app.domain.moderation import company_has_moderation_warning
 from app.models import User
 
 router = APIRouter(prefix="/applications", tags=["applications"])
@@ -67,6 +69,13 @@ def _map_answers(items: list[TestAnswerSchema] | None) -> list[TestAnswerInput] 
     ]
 
 
+def _application_response(db: Session, user: User, application) -> dict:
+    warning = None
+    if _candidate_owns_application(db, user, application):
+        warning = company_has_moderation_warning(db, application.company_id)
+    return application_to_response(application, company_moderation_warning=warning)
+
+
 @router.get("")
 def list_apps(
     role: str,
@@ -79,7 +88,7 @@ def list_apps(
         apps = list_applications(db, user=user, role=role, company_id=company_id)
     except ApplicationValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from None
-    return [application_to_response(app) for app in apps]
+    return [_application_response(db, user, app) for app in apps]
 
 
 @router.post("", status_code=201)
@@ -114,7 +123,7 @@ def submit_app(
         raise HTTPException(status_code=400, detail={"warnings": exc.warnings}) from None
     except ApplicationValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from None
-    return application_to_response(application)
+    return _application_response(db, user, application)
 
 
 @router.get("/{application_id}")
@@ -129,7 +138,7 @@ def get_app(
         raise HTTPException(status_code=404, detail="Application not found") from None
     except ApplicationAccessDeniedError:
         raise HTTPException(status_code=403, detail="Access denied") from None
-    return application_to_response(application)
+    return _application_response(db, user, application)
 
 
 @router.post("/{application_id}/view")
@@ -144,7 +153,7 @@ def view_app(
         raise HTTPException(status_code=404, detail="Application not found") from None
     except (ApplicationAccessDeniedError, InvalidTransitionError):
         raise HTTPException(status_code=400, detail="Cannot mark as viewed") from None
-    return application_to_response(application)
+    return _application_response(db, user, application)
 
 
 @router.post("/{application_id}/accept")
@@ -159,7 +168,7 @@ def accept_app(
         raise HTTPException(status_code=404, detail="Application not found") from None
     except (ApplicationAccessDeniedError, InvalidTransitionError):
         raise HTTPException(status_code=400, detail="Cannot accept") from None
-    body = application_to_response(application)
+    body = _application_response(db, user, application)
     if application.chat:
         body["chat_id"] = str(application.chat.id)
     return body
@@ -185,7 +194,7 @@ def reject_app(
         raise HTTPException(status_code=404, detail="Application not found") from None
     except (ApplicationAccessDeniedError, InvalidTransitionError):
         raise HTTPException(status_code=400, detail="Cannot reject") from None
-    return application_to_response(application)
+    return _application_response(db, user, application)
 
 
 @router.post("/{application_id}/extend")
@@ -209,7 +218,7 @@ def extend_app(
         raise HTTPException(status_code=404, detail="Application not found") from None
     except (ApplicationValidationError, InvalidTransitionError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from None
-    return application_to_response(application)
+    return _application_response(db, user, application)
 
 
 @router.post("/{application_id}/request-reactivation")
@@ -224,7 +233,7 @@ def reactivation_request(
         raise HTTPException(status_code=404, detail="Application not found") from None
     except (ApplicationAccessDeniedError, InvalidTransitionError):
         raise HTTPException(status_code=400, detail="Cannot request reactivation") from None
-    return application_to_response(application)
+    return _application_response(db, user, application)
 
 
 @router.post("/{application_id}/confirm-reactivation")
@@ -248,7 +257,7 @@ def reactivation_confirm(
         raise HTTPException(status_code=404, detail="Application not found") from None
     except InvalidTransitionError:
         raise HTTPException(status_code=400, detail="Cannot confirm reactivation") from None
-    return application_to_response(application)
+    return _application_response(db, user, application)
 
 
 @router.post("/{application_id}/close")
@@ -263,4 +272,4 @@ def close_app(
         raise HTTPException(status_code=404, detail="Application not found") from None
     except (ApplicationAccessDeniedError, InvalidTransitionError):
         raise HTTPException(status_code=400, detail="Cannot close") from None
-    return application_to_response(application)
+    return _application_response(db, user, application)
