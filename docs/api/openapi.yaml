@@ -1,0 +1,958 @@
+openapi: 3.1.0
+info:
+  title: Reverse HH API
+  version: 0.1.0
+  description: MVP API — employers respond to candidate resumes
+
+servers:
+  - url: /api/v1
+    description: Same-origin API
+
+tags:
+  - name: auth
+  - name: resumes
+  - name: tests
+  - name: catalog
+  - name: companies
+  - name: vacancies
+  - name: applications
+  - name: chats
+  - name: complaints
+  - name: admin
+  - name: notifications
+  - name: reference
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+
+  parameters:
+    CompanyId:
+      name: X-Company-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        display_name:
+          type: string
+        is_admin:
+          type: boolean
+        has_candidate_profile:
+          type: boolean
+        companies:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompanyMembership'
+
+    CompanyMembership:
+      type: object
+      properties:
+        company_id:
+          type: string
+          format: uuid
+        company_name:
+          type: string
+        role:
+          type: string
+          enum: [owner, recruiter]
+
+    RegisterRequest:
+      type: object
+      required: [email, password, display_name]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 8
+        display_name:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    Resume:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived, deleted]
+        visibility:
+          type: string
+          enum: [public, link_only, hidden]
+        published_data:
+          type: object
+        draft_data:
+          type: object
+        cover_letter_required:
+          type: boolean
+        has_test:
+          type: boolean
+        test_editing:
+          type: boolean
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - sent
+            - viewed
+            - accepted
+            - rejected
+            - auto_rejected
+            - expired
+            - reactivation_requested
+            - reactivated
+            - closed_after_acceptance
+        resume_snapshot:
+          type: object
+        vacancy_snapshot:
+          type: object
+        cover_letter:
+          type: string
+        mismatch_flags:
+          type: object
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    ApplicationSubmitRequest:
+      type: object
+      required: [resume_id, vacancy_id]
+      properties:
+        resume_id:
+          type: string
+          format: uuid
+        vacancy_id:
+          type: string
+          format: uuid
+        cover_letter:
+          type: string
+          minLength: 300
+          maxLength: 3000
+        test_answers:
+          type: array
+          items:
+            type: object
+            properties:
+              question_id:
+                type: string
+                format: uuid
+              text:
+                type: string
+              option_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+              scale:
+                type: integer
+        confirm_auto_reject_risk:
+          type: boolean
+
+    RejectRequest:
+      type: object
+      properties:
+        reasons:
+          type: array
+          items:
+            type: string
+        other_text:
+          type: string
+        share_with_employer:
+          type: boolean
+
+security:
+  - cookieAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      security: []
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        '400':
+          description: Validation error
+
+  /auth/login:
+    post:
+      tags: [auth]
+      security: []
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Logout
+      responses:
+        '204':
+          description: Cookie cleared
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Current user
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Not authenticated
+
+  /candidate/profile:
+    post:
+      tags: [resumes]
+      summary: Create candidate profile
+      responses:
+        '201':
+          description: Created
+
+  /resumes:
+    get:
+      tags: [resumes]
+      summary: List own resumes
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Resume'
+    post:
+      tags: [resumes]
+      summary: Create resume
+      responses:
+        '201':
+          description: Created
+
+  /resumes/{resume_id}:
+    get:
+      tags: [resumes]
+      summary: Get resume
+      parameters:
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resume'
+    patch:
+      tags: [resumes]
+      summary: Update draft
+      parameters:
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [resumes]
+      summary: Archive or permanently delete
+      parameters:
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: permanent
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '204':
+          description: Deleted
+
+  /resumes/{resume_id}/publish:
+    post:
+      tags: [resumes]
+      summary: Publish draft changes
+      parameters:
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Published
+
+  /resumes/{resume_id}/block-company:
+    post:
+      tags: [resumes]
+      summary: Block company
+      parameters:
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [company_id]
+              properties:
+                company_id:
+                  type: string
+                  format: uuid
+      responses:
+        '204':
+          description: Blocked
+
+  /resumes/{resume_id}/test:
+    get:
+      tags: [tests]
+      summary: Get test (candidate full / employer only during apply)
+      parameters:
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Test with questions
+    put:
+      tags: [tests]
+      summary: Save test draft
+      parameters:
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Saved
+    delete:
+      tags: [tests]
+      summary: Delete test
+      parameters:
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+
+  /resumes/{resume_id}/test/publish:
+    post:
+      tags: [tests]
+      summary: Publish test and restore resume visibility
+      parameters:
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Published
+
+  /catalog/resumes:
+    get:
+      tags: [catalog]
+      summary: Search resume catalog (verified employers only)
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+        - name: industry_id
+          in: query
+          schema:
+            type: string
+        - name: specialization_id
+          in: query
+          schema:
+            type: string
+        - name: skills
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: work_format
+          in: query
+          schema:
+            type: string
+        - name: salary_min
+          in: query
+          schema:
+            type: integer
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated resume cards
+
+  /catalog/resumes/{resume_id}/save:
+    post:
+      tags: [catalog]
+      summary: Save resume for later
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Saved
+
+  /catalog/resumes/{resume_id}/can-apply:
+    get:
+      tags: [catalog]
+      summary: Pre-check before apply (warnings, test required, etc.)
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+        - name: resume_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: vacancy_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: can_apply, warnings[]
+
+  /companies:
+    get:
+      tags: [companies]
+      summary: List companies user belongs to
+      responses:
+        '200':
+          description: List
+    post:
+      tags: [companies]
+      summary: Create company
+      responses:
+        '201':
+          description: Created
+
+  /companies/{company_id}:
+    get:
+      tags: [companies]
+      summary: Get company
+      parameters:
+        - name: company_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Company
+    patch:
+      tags: [companies]
+      summary: Update company profile
+      parameters:
+        - name: company_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Updated
+
+  /companies/{company_id}/verify:
+    post:
+      tags: [companies]
+      summary: Submit verification request
+      parameters:
+        - name: company_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Submitted
+
+  /companies/{company_id}/members:
+    get:
+      tags: [companies]
+      summary: List members
+      parameters:
+        - name: company_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Members
+    post:
+      tags: [companies]
+      summary: Invite recruiter by email
+      parameters:
+        - name: company_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Invited
+
+  /companies/{company_id}/vacancies:
+    get:
+      tags: [vacancies]
+      summary: List vacancies
+      parameters:
+        - name: company_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List
+    post:
+      tags: [vacancies]
+      summary: Create vacancy
+      parameters:
+        - name: company_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Created
+
+  /companies/{company_id}/vacancies/{vacancy_id}:
+    patch:
+      tags: [vacancies]
+      summary: Update vacancy
+      parameters:
+        - name: company_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: vacancy_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Updated
+
+  /companies/{company_id}/vacancies/{vacancy_id}/status:
+    post:
+      tags: [vacancies]
+      summary: Set vacancy status (owner/creator only)
+      parameters:
+        - name: company_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: vacancy_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [draft, active, archived]
+      responses:
+        '200':
+          description: Updated
+
+  /applications:
+    get:
+      tags: [applications]
+      summary: List applications (candidate inbox or employer outbound)
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [candidate, employer]
+        - $ref: '#/components/parameters/CompanyId'
+      responses:
+        '200':
+          description: List
+    post:
+      tags: [applications]
+      summary: Submit application (employer отклик)
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationSubmitRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+
+  /applications/{application_id}:
+    get:
+      tags: [applications]
+      summary: Get application detail
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+
+  /applications/{application_id}/view:
+    post:
+      tags: [applications]
+      summary: Mark as viewed (candidate)
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: viewed
+
+  /applications/{application_id}/accept:
+    post:
+      tags: [applications]
+      summary: Accept application (candidate)
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: accepted, chat_id returned
+
+  /applications/{application_id}/reject:
+    post:
+      tags: [applications]
+      summary: Reject application (candidate)
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectRequest'
+      responses:
+        '200':
+          description: rejected
+
+  /applications/{application_id}/extend:
+    post:
+      tags: [applications]
+      summary: Extend expiry once (employer)
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CompanyId'
+      responses:
+        '200':
+          description: Extended
+
+  /applications/{application_id}/request-reactivation:
+    post:
+      tags: [applications]
+      summary: Ask if expired offer still valid (candidate)
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: reactivation_requested
+
+  /applications/{application_id}/confirm-reactivation:
+    post:
+      tags: [applications]
+      summary: Confirm offer still valid (employer)
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CompanyId'
+      responses:
+        '200':
+          description: reactivated
+
+  /applications/{application_id}/close:
+    post:
+      tags: [applications]
+      summary: Close after acceptance (candidate)
+      parameters:
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: closed_after_acceptance
+
+  /chats/{chat_id}/messages:
+    get:
+      tags: [chats]
+      summary: List chat messages
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Messages
+    post:
+      tags: [chats]
+      summary: Send message
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+      responses:
+        '201':
+          description: Created
+
+  /complaints:
+    post:
+      tags: [complaints]
+      summary: File complaint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_type, target_id, body]
+              properties:
+                target_type:
+                  type: string
+                  enum: [company, message, application, resume]
+                target_id:
+                  type: string
+                  format: uuid
+                body:
+                  type: string
+      responses:
+        '201':
+          description: Created
+
+  /notifications:
+    get:
+      tags: [notifications]
+      summary: List in-app notifications
+      responses:
+        '200':
+          description: List
+
+  /admin/complaints:
+    get:
+      tags: [admin]
+      summary: List open complaints (admin)
+      responses:
+        '200':
+          description: List
+
+  /admin/sanctions:
+    post:
+      tags: [admin]
+      summary: Apply moderation sanction
+      responses:
+        '201':
+          description: Applied
+
+  /reference/industries:
+    get:
+      tags: [reference]
+      security: []
+      summary: List industries
+      responses:
+        '200':
+          description: List
+
+  /reference/specializations:
+    get:
+      tags: [reference]
+      security: []
+      summary: List specializations
+      responses:
+        '200':
+          description: List
+
+  /reference/skills:
+    get:
+      tags: [reference]
+      security: []
+      summary: Search skills autocomplete
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List

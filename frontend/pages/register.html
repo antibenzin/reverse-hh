@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация — Reverse HH</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <main class="container">
+    <div class="card" style="max-width: 400px; margin: 2rem auto;">
+      <h1>Регистрация</h1>
+      <div id="error" class="alert alert-error hidden"></div>
+      <form id="register-form">
+        <div class="form-group">
+          <label for="display_name">Имя</label>
+          <input type="text" id="display_name" name="display_name" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Пароль</label>
+          <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
+        </div>
+        <button class="btn" type="submit">Зарегистрироваться</button>
+      </form>
+      <p><a href="/pages/login.html">Уже есть аккаунт? Войти</a></p>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError($('#error'));
+      try {
+        await register($('#email').value, $('#password').value, $('#display_name').value);
+        window.location.href = '/';
+      } catch (err) {
+        showError($('#error'), err.message);
+      }
+    });
+  </script>
+</body>
+</html>

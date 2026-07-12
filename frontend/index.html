@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reverse HH</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Reverse HH</h1>
+      <p>Соискатели публикуют резюме — работодатели откликаются</p>
+    </div>
+  </header>
+  <main class="container">
+    <div class="card">
+      <h2>Выберите роль</h2>
+      <div class="nav-links" id="role-links">
+        <a class="btn btn-secondary" href="/pages/login.html">Войти</a>
+        <a class="btn btn-secondary" href="/pages/register.html">Регистрация</a>
+      </div>
+      <div id="authenticated-nav" class="hidden">
+        <p>Здравствуйте, <span id="user-name"></span></p>
+        <div class="nav-links">
+          <a class="btn" href="/pages/candidate/resumes.html">Я соискатель</a>
+          <a class="btn btn-secondary" href="/pages/employer/catalog.html">Я работодатель</a>
+          <button class="btn btn-secondary" id="logout-btn" type="button">Выйти</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    (async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        document.getElementById('role-links').classList.add('hidden');
+        document.getElementById('authenticated-nav').classList.remove('hidden');
+        document.getElementById('user-name').textContent = user.display_name || user.email;
+        document.getElementById('logout-btn').addEventListener('click', logout);
+      }
+    })();
+  </script>
+</body>
+</html>

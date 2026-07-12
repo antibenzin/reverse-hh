@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: reverse_hh
+      POSTGRES_PASSWORD: reverse_hh
+      POSTGRES_DB: reverse_hh
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reverse_hh"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://reverse_hh:reverse_hh@db:5432/reverse_hh
+      JWT_SECRET: dev-secret-change-in-production
+      DEBUG: "true"
+      FRONTEND_DIR: /frontend
+    volumes:
+      - ./backend:/app
+      - ./frontend:/frontend
+    working_dir: /app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

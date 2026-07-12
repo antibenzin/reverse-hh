@@ -60,3 +60,9 @@
 - Не называй Application «откликом кандидата» — откликается работодатель.
 - Не публикуй вакансии в каталог — вакансии непубличные.
 - Не используй «уровень опыта» (junior/middle/senior) — вместо этого блок опыта работы.
+
+## Related docs
+
+- [Entity model](docs/domain/entity-model.md) — tables, constraints, ER diagram
+- [Application state machine](docs/domain/application-state-machine.md) — transitions and side effects
+- [OpenAPI](docs/api/openapi.yaml) — REST endpoints

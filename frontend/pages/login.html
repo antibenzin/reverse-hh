@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход — Reverse HH</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <main class="container">
+    <div class="card" style="max-width: 400px; margin: 2rem auto;">
+      <h1>Вход</h1>
+      <div id="error" class="alert alert-error hidden"></div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Пароль</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <button class="btn" type="submit">Войти</button>
+      </form>
+      <p><a href="/pages/register.html">Нет аккаунта? Зарегистрироваться</a></p>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError($('#error'));
+      try {
+        await login($('#email').value, $('#password').value);
+        window.location.href = '/';
+      } catch (err) {
+        showError($('#error'), err.message);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -6,49 +6,68 @@
 
 - **PRD**: `docs/prd/reverse-hh-prd.md`
 - **Domain glossary**: `CONTEXT.md`
+- **Entity model**: `docs/domain/entity-model.md`
+- **State machine**: `docs/domain/application-state-machine.md`
+- **API contract**: `docs/api/openapi.yaml`
+- **UX flows**: `docs/ux/flows.md`
 - **ADRs**: `docs/adr/`
+- **Backlog**: `docs/backlog/epics.md`
+
+## Stack
+
+- Backend: FastAPI + PostgreSQL + SQLAlchemy + Alembic
+- Frontend: vanilla JS/HTML/CSS, `fetch` with `credentials: 'include'`
+- Auth: JWT in httpOnly cookie (ADR-0005)
 
 ## Working rules
 
-1. Читай PRD и `CONTEXT.md` перед изменениями доменной логики.
+1. Читай PRD, `CONTEXT.md` и релевантные ADR перед изменениями доменной логики.
 2. Не добавляй фичи из раздела Out of Scope PRD без явного запроса.
-3. Центральная доменная модель — отклик (`Application`), права доступа, snapshots и статусы. Не размазывай эту логику по UI-слоям.
-4. Любое изменение бизнес-правил должно сопровождаться тестами на внешнее поведение (см. PRD → Testing Decisions).
+3. Центральная доменная модель — **Application** (отклик работодателя). Логика в `backend/app/domain/`, не в роутерах и не в JS.
+4. Любое изменение бизнес-правил — тесты на внешнее поведение (см. PRD → Testing Decisions).
 5. Коммиты — только по запросу пользователя.
+6. Следуй `docs/api/openapi.yaml` для контракта API.
 
 ## Agent skills
 
 ### Issue tracker
 
-Issues and PRDs live in GitHub Issues for this repo. See `docs/agents/issue-tracker.md`.
+GitHub Issues. See `docs/agents/issue-tracker.md`. Backlog: `docs/backlog/epics.md`.
 
 ### Triage labels
 
-Default triage vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Single-context repo: `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
+Single-context: `CONTEXT.md` + `docs/adr/` + `docs/domain/`. See `docs/agents/domain.md`.
 
 ## Repo layout
 
 ```
 reverse-hh/
-├── AGENTS.md              # This file
-├── CONTEXT.md             # Domain glossary
-├── README.md
+├── backend/app/
+│   ├── domain/          # Business logic — implement features here first
+│   ├── api/             # Thin HTTP layer
+│   ├── models/          # SQLAlchemy
+│   └── services/        # email, notifications, audit
+├── frontend/
+│   ├── js/api.js        # fetch + credentials: 'include'
+│   └── pages/           # HTML per screen
 ├── docs/
-│   ├── prd/               # Product requirements
-│   ├── adr/               # Architecture decision records
-│   └── agents/            # Agent workflow config
-└── src/                   # Application code (to be scaffolded)
+│   ├── prd/
+│   ├── adr/
+│   ├── domain/
+│   ├── api/
+│   ├── ux/
+│   └── backlog/
+├── AGENTS.md
+├── CONTEXT.md
+└── docker-compose.yml
 ```
 
-## MVP focus
+## First task
 
-Первый этап разработки — доменный контур:
+**Epic Foundation** (`ready-for-agent`): DB models, Alembic, JWT cookie auth dependency, replace auth stub.
 
-- аккаунт с ролями соискателя и работодателя;
-- резюме, тесты, непубличные вакансии;
-- отклик работодателя на резюме;
-- принятие/отклонение, чат, модерация, audit log.
+See `docs/backlog/epics.md` for acceptance criteria.

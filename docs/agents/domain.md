@@ -10,6 +10,8 @@ How the engineering skills should consume this repo's domain documentation when 
 
 If any of these files don't exist, proceed silently.
 
+Also read `docs/prd/reverse-hh-prd.md`, `docs/domain/entity-model.md`, and `docs/domain/application-state-machine.md` when working on domain features.
+
 ## File structure
 
 Single-context repo:
