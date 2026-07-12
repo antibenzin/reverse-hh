@@ -1,1 +1,5 @@
-"""Database session — implement in Foundation epic."""
+"""Database session and engine."""
+
+from app.db.session import SessionLocal, engine, get_db
+
+__all__ = ["SessionLocal", "engine", "get_db"]
