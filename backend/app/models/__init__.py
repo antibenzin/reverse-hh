@@ -2,13 +2,15 @@ from app.models.application import Application, ApplicationTestAnswer
 from app.models.assessment import ResumeTest, TestQuestion, TestQuestionOption
 from app.models.base import Base
 from app.models.chat import Chat, ChatMessage
-from app.models.company import Company, CompanyMember
+from app.models.company import Company, CompanyInvite, CompanyJoinRequest, CompanyMember
 from app.models.enums import (
     ApplicationStatus,
     CompanyMemberRole,
     ComplaintStatus,
     ComplaintTargetType,
     ContactType,
+    InviteStatus,
+    JoinRequestStatus,
     QuestionType,
     ResumeStatus,
     ResumeVisibility,
@@ -52,6 +54,8 @@ __all__ = [
     "TestQuestionOption",
     "Company",
     "CompanyMember",
+    "CompanyInvite",
+    "CompanyJoinRequest",
     "Vacancy",
     "VacancyRecruiter",
     "Application",
@@ -71,6 +75,8 @@ __all__ = [
     "SkillPending",
     "ApplicationStatus",
     "CompanyMemberRole",
+    "InviteStatus",
+    "JoinRequestStatus",
     "ComplaintStatus",
     "ComplaintTargetType",
     "ContactType",
