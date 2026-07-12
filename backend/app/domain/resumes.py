@@ -371,10 +371,15 @@ def delete_resume_permanently(db: Session, *, user: User, resume_id: uuid.UUID) 
 def block_company(
     db: Session, *, user: User, resume_id: uuid.UUID, company_id: uuid.UUID
 ) -> None:
+    from app.domain.chat import set_chats_read_only_for_company_block
+
     resume = get_resume_for_owner(db, user=user, resume_id=resume_id)
     if any(block.company_id == company_id for block in resume.blocks):
         raise CompanyAlreadyBlockedError()
     db.add(ResumeBlock(resume_id=resume.id, company_id=company_id))
+    set_chats_read_only_for_company_block(
+        db, resume_id=resume.id, company_id=company_id
+    )
     db.commit()
 
 
