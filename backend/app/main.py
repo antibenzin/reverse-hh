@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.api import auth, candidate, catalog, companies, health, resumes, tests
+from app.api import auth, candidate, catalog, companies, health, resumes, tests, vacancies
 from app.config import get_frontend_path
 
 app = FastAPI(
@@ -15,6 +15,7 @@ app.include_router(health.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(candidate.router, prefix="/api/v1")
 app.include_router(companies.router, prefix="/api/v1")
+app.include_router(vacancies.router, prefix="/api/v1")
 app.include_router(resumes.router, prefix="/api/v1")
 app.include_router(tests.router, prefix="/api/v1")
 app.include_router(catalog.router, prefix="/api/v1")
