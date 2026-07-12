@@ -43,6 +43,18 @@ class CompanyMemberRole(StrEnum):
     RECRUITER = "recruiter"
 
 
+class InviteStatus(StrEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REVOKED = "revoked"
+
+
+class JoinRequestStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
 class VacancyStatus(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
