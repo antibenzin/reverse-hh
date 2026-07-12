@@ -311,6 +311,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Resume'
+    patch:
+      tags: [resumes]
+      summary: Update draft
       parameters:
         - name: resume_id
           in: path
